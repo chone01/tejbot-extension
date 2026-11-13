@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "TejBot",
+  "short_name": "TejBot",
+  "version": "1.0.0",
+  "description": "__MSG_extDesc__",
+  "default_locale": "cs",
+  "icons": { "16": "icons/16.png", "32": "icons/32.png", "48": "icons/48.png", "128": "icons/128.png" },
+  "action": { "default_popup": "src/popup.html", "default_title": "TejBot", "default_icon": { "16": "icons/16.png", "32": "icons/32.png" } },
+  "background": { "service_worker": "src/bg.js" },
+  "permissions": ["storage", "notifications", "alarms"],
+  "host_permissions": ["https://api.tejbot.eu/*", "https://tejbot.eu/*", "https://kick.com/*", "https://www.twitch.tv/*"],
+  "content_scripts": [
+    {
+      "matches": ["https://kick.com/*", "https://www.twitch.tv/*", "https://dashboard.twitch.tv/*"],
+      "js": ["src/i18n.js", "src/icons.js", "src/chat.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://tejbot.eu/rozsireni*", "https://www.tejbot.eu/rozsireni*"],
+      "js": ["src/connect.js"],
+      "run_at": "document_start"
+    }
+  ],
+  "minimum_chrome_version": "116"
+}

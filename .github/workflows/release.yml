@@ -1,0 +1,33 @@
+name: Release
+
+# Každý push do main sestaví balíček rozšíření (zip pro Chrome Web Store / Edge Add-ons i ruční instalaci)
+# a vydá ho jako novou verzi na GitHubu. Číslo verze se bere z manifest.json.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verze z manifestu
+        id: v
+        run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Kontrola skriptů
+        run: for f in src/*.js; do node --check "$f"; done
+      - name: Zabalit
+        run: |
+          mkdir -p dist
+          zip -r dist/TejBot-rozsireni.zip manifest.json src icons _locales -x "icons/icon.svg"
+      - name: Vydat verzi
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.v.outputs.version }}
+          name: TejBot rozšíření ${{ steps.v.outputs.version }}
+          files: dist/TejBot-rozsireni.zip
+          make_latest: true
