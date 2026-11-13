@@ -56,12 +56,12 @@ a { color: var(--brand-300); }
 .xp { margin-top: 12px; }
 .bar { height: 7px; border-radius: 5px; background: var(--line); overflow: hidden; margin-top: 4px; }
 .bar > i { display: block; height: 100%; background: var(--brand); border-radius: 5px; }
-.stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 12px; }
+.stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 12px; }
 .stat { background: var(--night); border-radius: 10px; padding: 7px 4px; text-align: center; }
 .stat b { display: block; font-size: 17px; }
 .stat span { font-size: 11px; color: var(--muted); }
-.slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
-.slot { aspect-ratio: 1; border-radius: 12px; border: 2px solid #3f4350; display: grid; place-items: center; background: transparent; padding: 0; }
+.slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; margin-top: 12px; align-items: start; }
+.slot { width: 100%; aspect-ratio: 1; border-radius: 12px; border: 2px solid #3f4350; display: grid; place-items: center; background: transparent; padding: 0; }
 .slot.empty { border-style: dashed; color: #3f4350; }
 .item { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
 .item .slot { width: 42px; height: 42px; flex-shrink: 0; }

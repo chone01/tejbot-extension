@@ -160,7 +160,7 @@ function heroView() {
         <div><div class="name">${esc(h.name)}</div><div class="small muted">${esc(t("level", { n: h.level }))} · ${esc(t("winsLosses", { w: TBI.num(h.wins), l: TBI.num(h.losses) }))}</div></div>
         ${h.unspent > 0 ? `<span class="pill">${esc(t("freePoints", { n: h.unspent }))}</span>` : ""}
       </div>
-      <div class="xp"><div class="row small muted"><span style="flex:1">XP</span><span>${TBI.num(h.xp - h.xpFrom)} / ${TBI.num(h.xpTo - h.xpFrom)}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>
+      <div class="xp"><div class="row small muted"><span style="flex:1">XP</span><span>${TBI.num(Math.max(0, h.xp - h.xpFrom))} / ${TBI.num(Math.max(0, h.xpTo - h.xpFrom))}</span></div><div class="bar"><i style="width:${pct}%"></i></div></div>
       <div class="stats">
         ${STATS.map(([k]) => `<div class="stat"><b>${TBI.num(h.stats[k])}</b><span>${esc(t(`stat_${k}`))}</span></div>`).join("")}
         <div class="stat"><b>${TBI.num(h.hp)}</b><span>${esc(t("hp"))}</span></div>

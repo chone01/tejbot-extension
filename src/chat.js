@@ -165,7 +165,7 @@
   .stat { background: #0a0a0f; border-radius: 9px; padding: 6px 3px; text-align: center; }
   .stat b { display: block; font-size: 15px; }
   .stat span { font-size: 10px; color: #9a9aa5; }
-  .slots { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-top: 10px; }
+  .slots { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; margin-top: 10px; }
   .slot { aspect-ratio: 1; border-radius: 10px; border: 2px solid #3f4350; display: grid; place-items: center; }
   .slot.empty { border-style: dashed; color: #3f4350; }
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; border-radius: 9px; border: 1px solid #2a2a33; background: #17171f; font-weight: 600; text-decoration: none; color: #f4f4f6; }
@@ -821,6 +821,8 @@
   function showChallenge(ev) {
     S.challenge = ev;
     mount();
+    // výzva je důležitější než otevřený panel
+    if (panelEl) togglePanel();
     hideChallenge(true);
     duelEl = el(`<div class="box duel"></div>`);
     ROOT.appendChild(duelEl);
