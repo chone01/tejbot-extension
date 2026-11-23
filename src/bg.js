@@ -34,8 +34,9 @@ async function api(base, method, path, body) {
     return { ok: false, code: "offline", status: 0 };
   }
   const json = await r.json().catch(() => ({}));
-  // token už neplatí (odhlášeno na webu) -> rozšíření se odhlásí
-  if (r.status === 401 && auth?.token) await logout(false);
+  // token už neplatí (odhlášeno na webu) -> rozšíření se odhlásí. Jen podle kontroly přihlášení,
+  // ať jiná chyba „nepřihlášen“ (jedna stránka, dočasný výpadek) diváka zbytečně neodhlásí.
+  if (r.status === 401 && auth?.token && base === "api" && path === "/ext/me") await logout(false);
   return { status: r.status, ...(json && typeof json === "object" ? json : {}), ok: r.ok && json?.ok !== false };
 }
 
@@ -251,6 +252,8 @@ async function onEvent(topic, ev) {
       priority: 2,
     });
     setTimeout(() => chrome.notifications.clear(id), Math.max(5000, (ev.expires || Date.now() + 60000) - Date.now()));
+    // pojistka: když se pozadí mezitím uspí, výzvu po vypršení smaže kontrola každou minutu (alarm „tick“)
+    void chrome.storage.session?.get("chExp").then((x) => chrome.storage.session.set({ chExp: { ...(x?.chExp || {}), [id]: ev.expires || Date.now() + 60000 } }));
   }
   if (ev.type === "challenge_end") {
     const all = await chrome.notifications.getAll();
@@ -328,9 +331,19 @@ chrome.runtime.onMessage.addListener((m, sender, reply) => {
         if (!sender.url || !/^https:\/\/(www\.)?tejbot\.eu\/rozsireni/.test(sender.url)) return { ok: false };
         const a = m.auth || {};
         if (!/^[A-Za-z0-9_-]{30,90}$/.test(String(a.token || ""))) return { ok: false };
-        const safe = (u, def) => (/^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(String(u || "").replace(/\/+$/, "")) ? String(u).replace(/\/+$/, "") : def);
+        // jen adresy TejBotu a Supabase (kdyby někdo na stránce podstrčil vlastní, přihlášení by k němu neodešlo)
+        const safe = (u, def, hosts) => {
+          const v = String(u || "").replace(/\/+$/, "");
+          try {
+            const h = new URL(v).hostname.toLowerCase();
+            return /^https:\/\/[a-z0-9.-]+$/i.test(v) && hosts.some((x) => (x.startsWith(".") ? h.endsWith(x) : h === x)) ? v : def;
+          } catch {
+            return def;
+          }
+        };
+        const TB = ["tejbot.eu", "www.tejbot.eu", "api.tejbot.eu"];
         await chrome.storage.local.set({
-          auth: { token: a.token, api: safe(a.api, DEF_API), web: safe(a.web, DEF_WEB), realtime: { url: safe(a.realtime?.url, ""), key: String(a.realtime?.key || "").slice(0, 300) } },
+          auth: { token: a.token, api: safe(a.api, DEF_API, TB), web: safe(a.web, DEF_WEB, TB), realtime: { url: safe(a.realtime?.url, "", [".supabase.co", ...TB]), key: String(a.realtime?.key || "").slice(0, 300) } },
           me: null,
         });
         const me = await getMe(true);
@@ -347,8 +360,19 @@ chrome.runtime.onMessage.addListener((m, sender, reply) => {
 
 // ------------------------------------------------------------------ start
 chrome.alarms.create("tick", { periodInMinutes: 1 });
-chrome.alarms.onAlarm.addListener((a) => {
-  if (a.name === "tick") void rt.ensure();
+chrome.alarms.onAlarm.addListener(async (a) => {
+  if (a.name !== "tick") return;
+  void rt.ensure();
+  // vypršelé výzvy na duel (tlačítko „Přijmout“ by už nic neudělalo)
+  const x = (await chrome.storage.session?.get("chExp").catch(() => null))?.chExp;
+  if (x) {
+    const keep = {};
+    for (const [id, until] of Object.entries(x)) {
+      if (until <= Date.now()) chrome.notifications.clear(id);
+      else keep[id] = until;
+    }
+    await chrome.storage.session.set({ chExp: keep });
+  }
 });
 chrome.runtime.onStartup.addListener(() => void rt.ensure());
 chrome.runtime.onInstalled.addListener(async (d) => {

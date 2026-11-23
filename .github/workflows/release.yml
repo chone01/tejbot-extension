@@ -15,16 +15,31 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Verze z manifestu
         id: v
         run: echo "version=$(node -p "require('./manifest.json').version")" >> "$GITHUB_OUTPUT"
+      # stejné číslo verze už vydané -> nevydávat znovu (přepsal by se balíček staré verze a prohlížeče by
+      # novou verzi stejně nepoznaly). Pro nové vydání zvedni "version" v manifest.json.
+      - name: Je verze nová?
+        id: tag
+        run: |
+          if git rev-parse -q --verify "refs/tags/v${{ steps.v.outputs.version }}" >/dev/null; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::Verze ${{ steps.v.outputs.version }} už je vydaná – zvedni version v manifest.json."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
       - name: Kontrola skriptů
         run: for f in src/*.js; do node --check "$f"; done
       - name: Zabalit
+        if: steps.tag.outputs.exists == 'false'
         run: |
           mkdir -p dist
           zip -r dist/TejBot-rozsireni.zip manifest.json src icons _locales -x "icons/icon.svg"
       - name: Vydat verzi
+        if: steps.tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.v.outputs.version }}

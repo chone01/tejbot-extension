@@ -927,6 +927,10 @@
     }
     placeLauncher();
   }, 1000);
+  // moderátorský kanál se pravidelně mění (odebraný moderátor ho nemůže poslouchat napořád) -> obnovit každých 30 min
+  setInterval(() => {
+    if (alive() && S.mod) void loadMod();
+  }, 30 * 60 * 1000);
   // nové zprávy: kontrola nejvýš 4× za vteřinu
   let scanQueued = false;
   new MutationObserver(() => {
